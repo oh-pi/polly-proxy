@@ -1,5 +1,5 @@
 {
-  "name": "Pollinations AI Proxy Server Generator",
-  "description": "A tool to generate a local Node.js proxy server. This server exposes an OpenAI-compatible API endpoint for image generation, allowing tools like SillyTavern to use Pollinations.ai.",
+  "name": "Pollinations AI Multi-Endpoint Proxy Generator",
+  "description": "A tool to generate a local Node.js proxy server. This server exposes OpenAI-compatible API endpoints, routing image generation to Pollinations.ai and providing placeholders for other services like chat and TTS.",
   "requestFramePermissions": []
 }

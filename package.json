@@ -1,5 +1,5 @@
 {
-  "name": "pollinations-ai-proxy-server-generator",
+  "name": "pollinations-ai-multi-endpoint-proxy-generator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
