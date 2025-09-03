@@ -22,7 +22,32 @@ const Header: FC = () => (
   </header>
 );
 
-const EndpointsConfig: FC<any> = ({ port, setPort, width, setWidth, height, setHeight }) => {
+const ToggleSwitch: FC<{ checked: boolean; onChange: (checked: boolean) => void; }> = ({ checked, onChange }) => (
+    <button
+        type="button"
+        className={`${checked ? 'bg-cyan-500' : 'bg-slate-600'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-800`}
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+    >
+        <span
+            aria-hidden="true"
+            className={`${checked ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+        />
+    </button>
+);
+
+
+const EndpointsConfig: FC<any> = ({ 
+    port, setPort, 
+    width, setWidth, 
+    height, setHeight, 
+    isChatActive, setIsChatActive, 
+    chatProvider, setChatProvider,
+    chatModel, setChatModel, 
+    customChatUrl, setCustomChatUrl,
+    isTtsActive, setIsTtsActive 
+}) => {
     return (
     <div className="w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 space-y-6">
         <div>
@@ -61,24 +86,76 @@ const EndpointsConfig: FC<any> = ({ port, setPort, width, setWidth, height, setH
                 </div>
             </div>
 
-            {/* Placeholder Endpoints */}
-            {[
-                { Icon: ChatIcon, title: 'Chat Completions', path: '/v1/chat/completions' },
-                { Icon: SpeakerIcon, title: 'Text-to-Speech (TTS)', path: '/v1/audio/speech' }
-            ].map(({Icon, title, path}) => (
-                <div key={title} className="p-4 bg-slate-800/60 rounded-lg border border-slate-700 opacity-60" title="Pollinations.ai does not offer a public API for this service. This endpoint is a placeholder.">
-                    <div className="flex justify-between items-center">
-                         <div className="flex items-center space-x-3">
-                            <Icon className="h-6 w-6 text-slate-500"/>
-                            <div>
-                                <h3 className="font-semibold text-slate-400">{title}</h3>
-                                <p className="text-xs font-mono text-slate-500">{path}</p>
-                            </div>
+             {/* Chat Completions Endpoint */}
+            <div className={`p-4 rounded-lg border transition-all duration-300 ${isChatActive ? 'bg-slate-900/50 border-cyan-500/30' : 'bg-slate-800/60 border-slate-700 opacity-70'}`}>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                        <ChatIcon className={`h-6 w-6 ${isChatActive ? 'text-cyan-400' : 'text-slate-500'}`}/>
+                        <div>
+                            <h3 className={`font-semibold ${isChatActive ? 'text-slate-200' : 'text-slate-400'}`}>Chat Completions</h3>
+                            <p className={`text-xs font-mono ${isChatActive ? 'text-slate-400' : 'text-slate-500'}`}>/v1/chat/completions</p>
                         </div>
-                        <div className="text-sm font-medium text-slate-400 px-2 py-1 rounded-full bg-slate-700/50">Not Available</div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <div className={`text-sm font-medium px-2 py-1 rounded-full ${isChatActive ? 'text-cyan-400 bg-cyan-900/50' : 'text-slate-400 bg-slate-700/50'}`}>
+                            {isChatActive ? 'Active' : 'Not Available'}
+                        </div>
+                        <ToggleSwitch checked={isChatActive} onChange={setIsChatActive} />
                     </div>
                 </div>
-            ))}
+                 {isChatActive && (
+                     <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+                        <div className="space-y-2">
+                            <label htmlFor="chat-provider" className="font-medium text-slate-300 text-sm">Chat Provider</label>
+                            <select id="chat-provider" value={chatProvider} onChange={(e) => setChatProvider(e.target.value)} className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow">
+                                <option value="gemini">Google Gemini</option>
+                                <option value="custom">Custom OpenAI-compatible URL</option>
+                            </select>
+                        </div>
+                        
+                        {chatProvider === 'gemini' && (
+                            <div className="space-y-2">
+                                <label htmlFor="chat-model" className="font-medium text-slate-300 text-sm">Model</label>
+                                <select id="chat-model" value={chatModel} onChange={(e) => setChatModel(e.target.value)} className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow">
+                                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                                </select>
+                            </div>
+                        )}
+
+                        {chatProvider === 'custom' && (
+                             <div className="space-y-2">
+                                <label htmlFor="custom-url" className="font-medium text-slate-300 text-sm">Endpoint Base URL</label>
+                                <input id="custom-url" type="text" value={customChatUrl} onChange={(e) => setCustomChatUrl(e.target.value)} placeholder="http://localhost:1234/v1" className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow" />
+                                <p className="text-xs text-slate-500">The proxy will forward requests to this URL. E.g., for LM Studio.</p>
+                            </div>
+                        )}
+                    </div>
+                 )}
+            </div>
+            
+            {/* Text-to-Speech Endpoint */}
+            <div className={`p-4 rounded-lg border transition-all duration-300 ${isTtsActive ? 'bg-slate-900/50 border-cyan-500/30' : 'bg-slate-800/60 border-slate-700 opacity-70'}`}>
+                 <div className="flex justify-between items-center">
+                     <div className="flex items-center space-x-3">
+                        <SpeakerIcon className={`h-6 w-6 ${isTtsActive ? 'text-cyan-400' : 'text-slate-500'}`}/>
+                        <div>
+                            <h3 className={`font-semibold ${isTtsActive ? 'text-slate-200' : 'text-slate-400'}`}>Text-to-Speech (TTS)</h3>
+                            <p className={`text-xs font-mono ${isTtsActive ? 'text-slate-400' : 'text-slate-500'}`}>/v1/audio/speech</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <div className={`text-sm font-medium px-2 py-1 rounded-full ${isTtsActive ? 'text-cyan-400 bg-cyan-900/50' : 'text-slate-400 bg-slate-700/50'}`}>
+                            {isTtsActive ? 'Active' : 'Not Available'}
+                        </div>
+                        <ToggleSwitch checked={isTtsActive} onChange={setIsTtsActive} />
+                    </div>
+                </div>
+                {isTtsActive && (
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                        <p className="text-sm text-slate-400">This endpoint is active but will return a placeholder error as a public TTS API is not yet integrated.</p>
+                    </div>
+                )}
+            </div>
         </div>
     </div>
     );
@@ -106,7 +183,7 @@ const CodePanel: FC<{ serverCode: string }> = ({ serverCode }) => {
   );
 };
 
-const Instructions: FC<{ port: number }> = ({ port }) => (
+const Instructions: FC<{ port: number, dependencies: string, isChatActive: boolean, chatProvider: string }> = ({ port, dependencies, isChatActive, chatProvider }) => (
     <div className="w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 space-y-4">
         <div className="flex items-center space-x-3">
              <InfoIcon className="h-8 w-8 text-cyan-400 flex-shrink-0"/>
@@ -118,21 +195,29 @@ const Instructions: FC<{ port: number }> = ({ port }) => (
                 <h3 className="font-semibold text-lg text-slate-300">Step 1: Save the Code</h3>
                 <p className="text-slate-400">Copy the code above and save it in a file named <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">proxy-server.js</code>.</p>
             </div>
+             {isChatActive && chatProvider === 'gemini' && (
+                <div className="p-4 bg-slate-900/50 rounded-lg">
+                    <h3 className="font-semibold text-lg text-slate-300">Step 2: Set Environment Variable (For Gemini)</h3>
+                    <p className="text-slate-400">Create a <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">.env</code> file in the same directory and add your Google Gemini API key:</p>
+                    <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">API_KEY="YOUR_GEMINI_API_KEY"</code>
+                    <p className="text-slate-400 mt-2">You will also need to install <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">dotenv</code> by adding it to the install command below.</p>
+                </div>
+             )}
             <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step 2: Install Dependencies</h3>
+                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '3' : '2'}: Install Dependencies</h3>
                 <p className="text-slate-400">Open a terminal or command prompt in the folder where you saved the file. You need Node.js installed. Run:</p>
-                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">npm install express cors</code>
+                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">{dependencies}</code>
             </div>
              <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step 3: Run the Server</h3>
+                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '4' : '3'}: Run the Server</h3>
                 <p className="text-slate-400">In the same terminal, run:</p>
                  <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">node proxy-server.js</code>
             </div>
              <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step 4: Configure Your App</h3>
-                <p className="text-slate-400">In your application's API settings (e.g., SillyTavern), set the endpoint to:</p>
+                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '5' : '4'}: Configure Your App</h3>
+                <p className="text-slate-400">In your application's API settings, set the API Base URL / Endpoint to:</p>
                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">http://localhost:${port}/v1</code>
-                 <p className="text-slate-400 mt-2">Set the API type to "OpenAI". The server will now handle image generation and provide valid error responses for other endpoints.</p>
+                 <p className="text-slate-400 mt-2">Set the API type to "OpenAI". If you are using the custom URL proxy, your application's API key will be forwarded automatically.</p>
             </div>
         </div>
     </div>
@@ -140,10 +225,147 @@ const Instructions: FC<{ port: number }> = ({ port }) => (
 
 // --- Server Code Generation Logic ---
 
-const generateServerCode = (port: number, defaultWidth: number, defaultHeight: number): string => `// Generated by Pollinations AI Proxy Generator
-const express = require('express');
-const cors = require('cors');
+const generateServerCode = (
+    port: number,
+    defaultWidth: number,
+    defaultHeight: number,
+    isChatActive: boolean,
+    chatProvider: 'gemini' | 'custom',
+    chatModel: string,
+    customChatUrl: string,
+    isTtsActive: boolean
+): string => {
 
+    const getChatCompletionsCode = () => {
+        if (!isChatActive) {
+            return `
+// --- [PLACEHOLDER] Chat Completions Endpoint ---
+app.post('/v1/chat/completions', (req, res) => {
+    sendNotImplementedError(res, '/v1/chat/completions');
+});
+`;
+        }
+        if (chatProvider === 'gemini') {
+            return `
+// --- [ACTIVE] Chat Completions Endpoint (Powered by Google Gemini) ---
+const { GoogleGenAI } = require('@google/genai');
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const geminiModel = '${chatModel}';
+
+app.post('/v1/chat/completions', async (req, res) => {
+    console.log('Received /v1/chat/completions request for model:', req.body.model);
+    
+    if (!process.env.API_KEY) {
+        return res.status(500).json({ error: { message: 'API_KEY environment variable not set for Gemini.' } });
+    }
+    
+    const { messages } = req.body;
+    
+    if (!messages || messages.length === 0) {
+        return res.status(400).json({ error: { message: 'Messages are required.' } });
+    }
+
+    // Convert OpenAI messages to a simple string prompt for Gemini
+    const prompt = messages.map(msg => \`\${msg.role}: \${msg.content}\`).join('\\n');
+
+    try {
+        const response = await ai.models.generateContent({
+            model: geminiModel,
+            contents: prompt,
+        });
+        
+        const openAIResponse = {
+            id: 'chatcmpl-' + Math.random().toString(36).substr(2, 9),
+            object: 'chat.completion',
+            created: Math.floor(Date.now() / 1000),
+            model: req.body.model || geminiModel,
+            choices: [{
+                index: 0,
+                message: {
+                    role: 'assistant',
+                    content: response.text,
+                },
+                finish_reason: 'stop',
+            }],
+            usage: {
+                prompt_tokens: 0, // Not provided by Gemini API
+                completion_tokens: 0, // Not provided by Gemini API
+                total_tokens: 0, // Not provided by Gemini API
+            },
+        };
+        res.json(openAIResponse);
+
+    } catch (error) {
+        console.error('Error calling Gemini API:', error);
+        res.status(500).json({ error: { message: 'An error occurred with the Gemini API.', details: error.message } });
+    }
+});
+`;
+        }
+
+        if (chatProvider === 'custom') {
+            return `
+// --- [ACTIVE] Chat Completions Endpoint (Proxy to Custom URL) ---
+const fetch = require('node-fetch');
+const CUSTOM_CHAT_URL = '${customChatUrl.replace(/\/$/, '')}/chat/completions';
+
+app.post('/v1/chat/completions', async (req, res) => {
+    console.log(\`Proxying /v1/chat/completions to \${CUSTOM_CHAT_URL}\`);
+    
+    try {
+        const response = await fetch(CUSTOM_CHAT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Forward the Authorization header if it exists
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        // Forward the response from the custom endpoint back to the client
+        const responseData = await response.json();
+        res.status(response.status).json(responseData);
+
+    } catch (error) {
+        console.error('Error proxying to custom endpoint:', error);
+        res.status(500).json({ error: { message: 'Failed to proxy request to custom endpoint.', details: error.message } });
+    }
+});
+`;
+        }
+        return '';
+    };
+
+
+    const ttsCode = isTtsActive ? `
+// --- [ACTIVE] Text-to-Speech (TTS) Endpoint ---
+app.post('/v1/audio/speech', (req, res) => {
+    console.log('Received /v1/audio/speech request. This endpoint is active but does not generate audio.');
+    res.status(400).json({
+        error: {
+            message: 'The requested voice or model is not available. This proxy currently does not support TTS generation.',
+            type: 'invalid_request_error'
+        }
+    });
+});
+` : `
+// --- [PLACEHOLDER] Text-to-Speech (TTS) Endpoint ---
+app.post('/v1/audio/speech', (req, res) => {
+    sendNotImplementedError(res, '/v1/audio/speech');
+});
+`;
+    
+    const getImports = () => {
+        let imports = `const express = require('express');\nconst cors = require('cors');\n`;
+        if (isChatActive && chatProvider === 'gemini') {
+            imports += `require('dotenv').config();\n`;
+        }
+        return imports;
+    }
+
+    return `// Generated by Pollinations AI Proxy Generator
+${getImports()}
 const app = express();
 const PORT = ${port};
 const DEFAULT_WIDTH = ${defaultWidth};
@@ -203,17 +425,8 @@ app.post('/v1/images/generations', (req, res) => {
     
     res.json(openAIResponse);
 });
-
-// --- [PLACEHOLDER] Chat Completions Endpoint ---
-app.post('/v1/chat/completions', (req, res) => {
-    sendNotImplementedError(res, '/v1/chat/completions');
-});
-
-// --- [PLACEHOLDER] Text-to-Speech (TTS) Endpoint ---
-app.post('/v1/audio/speech', (req, res) => {
-    sendNotImplementedError(res, '/v1/audio/speech');
-});
-
+${getChatCompletionsCode()}
+${ttsCode}
 // --- Health Check Endpoint ---
 app.get('/v1', (req, res) => {
     res.status(200).send('Pollinations.ai to OpenAI Proxy Server is running.');
@@ -222,10 +435,11 @@ app.get('/v1', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(\`Server started. OpenAI-compatible endpoint available at http://localhost:\${PORT}/v1\`);
     console.log('-> Image Generation: POST http://localhost:\${PORT}/v1/images/generations (ACTIVE)');
-    console.log('-> Chat Completions: POST http://localhost:\${PORT}/v1/chat/completions (Placeholder)');
-    console.log('-> TTS: POST http://localhost:\${PORT}/v1/audio/speech (Placeholder)');
+    console.log('-> Chat Completions: POST http://localhost:\${PORT}/v1/chat/completions (${isChatActive ? `ACTIVE - Using ${chatProvider === 'gemini' ? 'Gemini' : 'Custom URL'}` : 'Placeholder'})');
+    console.log('-> TTS: POST http://localhost:\${PORT}/v1/audio/speech (${isTtsActive ? 'ACTIVE - Placeholder' : 'Placeholder'})');
 });
 `;
+}
 
 // --- Main App Component ---
 
@@ -233,23 +447,42 @@ const App: FC = () => {
   const [port, setPort] = useState<number>(8111);
   const [width, setWidth] = useState<number>(1024);
   const [height, setHeight] = useState<number>(1024);
+  const [isChatActive, setIsChatActive] = useState<boolean>(false);
+  const [chatProvider, setChatProvider] = useState<'gemini' | 'custom'>('gemini');
+  const [chatModel, setChatModel] = useState<string>('gemini-2.5-flash');
+  const [customChatUrl, setCustomChatUrl] = useState<string>('http://localhost:1234/v1');
+  const [isTtsActive, setIsTtsActive] = useState<boolean>(false);
 
-  const serverCode = useMemo(() => generateServerCode(port, width, height), [port, width, height]);
+  const serverCode = useMemo(() => generateServerCode(port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive), [port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive]);
   
+  const dependencies = useMemo(() => {
+      const deps = ['express', 'cors'];
+      if(isChatActive) {
+          if (chatProvider === 'gemini') {
+            deps.push('@google/genai', 'dotenv');
+          } else if (chatProvider === 'custom') {
+            deps.push('node-fetch@2');
+          }
+      }
+      return `npm install ${deps.join(' ')}`;
+  }, [isChatActive, chatProvider]);
+
   return (
     <div className="min-h-screen bg-slate-900 bg-grid-slate-700/[0.2] font-sans">
         <main className="container mx-auto max-w-7xl p-4 md:p-8 space-y-8">
             <Header />
             <EndpointsConfig 
-                port={port}
-                setPort={setPort}
-                width={width}
-                setWidth={setWidth}
-                height={height}
-                setHeight={setHeight}
+                port={port} setPort={setPort}
+                width={width} setWidth={setWidth}
+                height={height} setHeight={setHeight}
+                isChatActive={isChatActive} setIsChatActive={setIsChatActive}
+                chatProvider={chatProvider} setChatProvider={setChatProvider}
+                chatModel={chatModel} setChatModel={setChatModel}
+                customChatUrl={customChatUrl} setCustomChatUrl={setCustomChatUrl}
+                isTtsActive={isTtsActive} setIsTtsActive={setIsTtsActive}
             />
             <CodePanel serverCode={serverCode} />
-            <Instructions port={port} />
+            <Instructions port={port} dependencies={dependencies} isChatActive={isChatActive} chatProvider={chatProvider}/>
         </main>
     </div>
   );
