@@ -46,7 +46,9 @@ const EndpointsConfig: FC<any> = ({
     chatProvider, setChatProvider,
     chatModel, setChatModel, 
     customChatUrl, setCustomChatUrl,
-    isTtsActive, setIsTtsActive 
+    isTtsActive, setIsTtsActive,
+    ttsProvider, setTtsProvider,
+    customTtsUrl, setCustomTtsUrl
 }) => {
     return (
     <div className="w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 space-y-6">
@@ -151,8 +153,24 @@ const EndpointsConfig: FC<any> = ({
                     </div>
                 </div>
                 {isTtsActive && (
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                        <p className="text-sm text-slate-400">This endpoint is active but will return a placeholder error as a public TTS API is not yet integrated.</p>
+                    <div className="mt-4 pt-4 border-t border-slate-700 space-y-4">
+                        <div className="space-y-2">
+                             <label htmlFor="tts-provider" className="font-medium text-slate-300 text-sm">TTS Provider</label>
+                             <select id="tts-provider" value={ttsProvider} onChange={(e) => setTtsProvider(e.target.value as any)} className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow">
+                                <option value="placeholder">Placeholder (Returns Error)</option>
+                                <option value="custom">Custom URL Proxy</option>
+                             </select>
+                        </div>
+                        {ttsProvider === 'placeholder' && (
+                            <p className="text-sm text-slate-400">This option will return a placeholder error, as a public TTS API is not yet integrated.</p>
+                        )}
+                         {ttsProvider === 'custom' && (
+                            <div className="space-y-2">
+                                <label htmlFor="custom-tts-url" className="font-medium text-slate-300 text-sm">Endpoint URL</label>
+                                <input id="custom-tts-url" type="text" value={customTtsUrl} onChange={(e) => setCustomTtsUrl(e.target.value)} placeholder="http://localhost:5002/api/tts" className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow" />
+                                <p className="text-xs text-slate-500">The proxy will forward TTS requests to this URL. The target should expect a POST request and return an audio stream.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -172,7 +190,7 @@ const CodePanel: FC<{ serverCode: string }> = ({ serverCode }) => {
   return (
     <div className="w-full bg-slate-900 border border-slate-700 rounded-lg">
       <div className="flex justify-between items-center p-3 bg-slate-800/50 rounded-t-lg">
-        <h3 className="font-mono text-sm text-slate-300">proxy-server.js</h3>
+        <h3 className="font-mono text-sm text-slate-300">proxy-server.mjs</h3>
         <button onClick={handleCopy} className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 rounded-md transition-colors">
           {isCopied ? <CheckIcon className="h-4 w-4 text-emerald-400" /> : <CopyIcon className="h-4 w-4" />}
           <span>{isCopied ? 'Copied!' : 'Copy Code'}</span>
@@ -193,7 +211,7 @@ const Instructions: FC<{ port: number, dependencies: string, isChatActive: boole
         <div className="space-y-3">
             <div className="p-4 bg-slate-900/50 rounded-lg">
                 <h3 className="font-semibold text-lg text-slate-300">Step 1: Save the Code</h3>
-                <p className="text-slate-400">Copy the code above and save it in a file named <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">proxy-server.js</code>.</p>
+                <p className="text-slate-400">Copy the code above and save it in a file named <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">proxy-server.mjs</code>. The `.mjs` extension is important for it to be treated as a modern JavaScript module.</p>
             </div>
              {isChatActive && chatProvider === 'gemini' && (
                 <div className="p-4 bg-slate-900/50 rounded-lg">
@@ -211,7 +229,7 @@ const Instructions: FC<{ port: number, dependencies: string, isChatActive: boole
              <div className="p-4 bg-slate-900/50 rounded-lg">
                 <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '4' : '3'}: Run the Server</h3>
                 <p className="text-slate-400">In the same terminal, run:</p>
-                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">node proxy-server.js</code>
+                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">node proxy-server.mjs</code>
             </div>
              <div className="p-4 bg-slate-900/50 rounded-lg">
                 <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '5' : '4'}: Configure Your App</h3>
@@ -233,8 +251,24 @@ const generateServerCode = (
     chatProvider: 'gemini' | 'custom',
     chatModel: string,
     customChatUrl: string,
-    isTtsActive: boolean
+    isTtsActive: boolean,
+    ttsProvider: 'placeholder' | 'custom',
+    customTtsUrl: string,
 ): string => {
+
+    const getImports = () => {
+        let imports = `import express from 'express';\nimport cors from 'cors';\n`;
+        const needsFetch = (isChatActive && chatProvider === 'custom') || (isTtsActive && ttsProvider === 'custom');
+
+        if (isChatActive && chatProvider === 'gemini') {
+            imports += `import 'dotenv/config';\n`;
+            imports += `import { GoogleGenAI } from '@google/genai';\n`;
+        }
+        if (needsFetch) {
+            imports += `import fetch from 'node-fetch';\n`;
+        }
+        return imports;
+    }
 
     const getChatCompletionsCode = () => {
         if (!isChatActive) {
@@ -248,7 +282,6 @@ app.post('/v1/chat/completions', (req, res) => {
         if (chatProvider === 'gemini') {
             return `
 // --- [ACTIVE] Chat Completions Endpoint (Powered by Google Gemini) ---
-const { GoogleGenAI } = require('@google/genai');
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const geminiModel = '${chatModel}';
 
@@ -306,7 +339,6 @@ app.post('/v1/chat/completions', async (req, res) => {
         if (chatProvider === 'custom') {
             return `
 // --- [ACTIVE] Chat Completions Endpoint (Proxy to Custom URL) ---
-const fetch = require('node-fetch');
 const CUSTOM_CHAT_URL = '${customChatUrl.replace(/\/$/, '')}/chat/completions';
 
 app.post('/v1/chat/completions', async (req, res) => {
@@ -337,8 +369,53 @@ app.post('/v1/chat/completions', async (req, res) => {
         return '';
     };
 
+    const getTtsCode = () => {
+        if (!isTtsActive) {
+            return `
+// --- [PLACEHOLDER] Text-to-Speech (TTS) Endpoint ---
+app.post('/v1/audio/speech', (req, res) => {
+    sendNotImplementedError(res, '/v1/audio/speech');
+});
+`;
+        }
+        if (ttsProvider === 'custom') {
+            return `
+// --- [ACTIVE] Text-to-Speech (TTS) Endpoint (Proxy to Custom URL) ---
+const CUSTOM_TTS_URL = '${customTtsUrl.replace(/\/$/, '')}';
 
-    const ttsCode = isTtsActive ? `
+app.post('/v1/audio/speech', async (req, res) => {
+    console.log(\`Proxying /v1/audio/speech to \${CUSTOM_TTS_URL}\`);
+
+    try {
+        const response = await fetch(CUSTOM_TTS_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Forward the Authorization header if it exists
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
+            },
+            body: JSON.stringify(req.body)
+        });
+        
+        if (!response.ok) {
+           const errorBody = await response.text();
+           console.error(\`Error from custom TTS endpoint (\${response.status}): \${errorBody}\`);
+           return res.status(response.status).send(errorBody);
+        }
+
+        // Forward the audio stream from the custom endpoint back to the client
+        res.setHeader('Content-Type', response.headers.get('Content-Type') || 'audio/mpeg');
+        response.body.pipe(res);
+
+    } catch (error) {
+        console.error('Error proxying TTS request to custom endpoint:', error);
+        res.status(500).json({ error: { message: 'Failed to proxy TTS request to custom endpoint.', details: error.message } });
+    }
+});
+`;
+        }
+
+        return `
 // --- [ACTIVE] Text-to-Speech (TTS) Endpoint ---
 app.post('/v1/audio/speech', (req, res) => {
     console.log('Received /v1/audio/speech request. This endpoint is active but does not generate audio.');
@@ -349,20 +426,14 @@ app.post('/v1/audio/speech', (req, res) => {
         }
     });
 });
-` : `
-// --- [PLACEHOLDER] Text-to-Speech (TTS) Endpoint ---
-app.post('/v1/audio/speech', (req, res) => {
-    sendNotImplementedError(res, '/v1/audio/speech');
-});
 `;
+    };
     
-    const getImports = () => {
-        let imports = `const express = require('express');\nconst cors = require('cors');\n`;
-        if (isChatActive && chatProvider === 'gemini') {
-            imports += `require('dotenv').config();\n`;
-        }
-        return imports;
-    }
+    const getTtsStatus = () => {
+        if (!isTtsActive) return 'Placeholder';
+        if (ttsProvider === 'custom') return 'ACTIVE - Using Custom URL';
+        return 'ACTIVE - Placeholder';
+    };
 
     return `// Generated by Pollinations AI Proxy Generator
 ${getImports()}
@@ -426,7 +497,7 @@ app.post('/v1/images/generations', (req, res) => {
     res.json(openAIResponse);
 });
 ${getChatCompletionsCode()}
-${ttsCode}
+${getTtsCode()}
 // --- Health Check Endpoint ---
 app.get('/v1', (req, res) => {
     res.status(200).send('Pollinations.ai to OpenAI Proxy Server is running.');
@@ -436,7 +507,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(\`Server started. OpenAI-compatible endpoint available at http://localhost:\${PORT}/v1\`);
     console.log('-> Image Generation: POST http://localhost:\${PORT}/v1/images/generations (ACTIVE)');
     console.log('-> Chat Completions: POST http://localhost:\${PORT}/v1/chat/completions (${isChatActive ? `ACTIVE - Using ${chatProvider === 'gemini' ? 'Gemini' : 'Custom URL'}` : 'Placeholder'})');
-    console.log('-> TTS: POST http://localhost:\${PORT}/v1/audio/speech (${isTtsActive ? 'ACTIVE - Placeholder' : 'Placeholder'})');
+    console.log('-> TTS: POST http://localhost:\${PORT}/v1/audio/speech (${getTtsStatus()})');
 });
 `;
 }
@@ -452,20 +523,27 @@ const App: FC = () => {
   const [chatModel, setChatModel] = useState<string>('gemini-2.5-flash');
   const [customChatUrl, setCustomChatUrl] = useState<string>('http://localhost:1234/v1');
   const [isTtsActive, setIsTtsActive] = useState<boolean>(false);
+  const [ttsProvider, setTtsProvider] = useState<'placeholder' | 'custom'>('placeholder');
+  const [customTtsUrl, setCustomTtsUrl] = useState<string>('http://localhost:5002/api/tts');
 
-  const serverCode = useMemo(() => generateServerCode(port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive), [port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive]);
+
+  const serverCode = useMemo(() => generateServerCode(port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive, ttsProvider, customTtsUrl), [port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive, ttsProvider, customTtsUrl]);
   
   const dependencies = useMemo(() => {
-      const deps = ['express', 'cors'];
+      const deps = new Set(['express', 'cors']);
       if(isChatActive) {
           if (chatProvider === 'gemini') {
-            deps.push('@google/genai', 'dotenv');
+            deps.add('@google/genai');
+            deps.add('dotenv');
           } else if (chatProvider === 'custom') {
-            deps.push('node-fetch@2');
+            deps.add('node-fetch@2');
           }
       }
-      return `npm install ${deps.join(' ')}`;
-  }, [isChatActive, chatProvider]);
+      if (isTtsActive && ttsProvider === 'custom') {
+          deps.add('node-fetch@2');
+      }
+      return `npm install ${Array.from(deps).join(' ')}`;
+  }, [isChatActive, chatProvider, isTtsActive, ttsProvider]);
 
   return (
     <div className="min-h-screen bg-slate-900 bg-grid-slate-700/[0.2] font-sans">
@@ -480,6 +558,8 @@ const App: FC = () => {
                 chatModel={chatModel} setChatModel={setChatModel}
                 customChatUrl={customChatUrl} setCustomChatUrl={setCustomChatUrl}
                 isTtsActive={isTtsActive} setIsTtsActive={setIsTtsActive}
+                ttsProvider={ttsProvider} setTtsProvider={setTtsProvider}
+                customTtsUrl={customTtsUrl} setCustomTtsUrl={setCustomTtsUrl}
             />
             <CodePanel serverCode={serverCode} />
             <Instructions port={port} dependencies={dependencies} isChatActive={isChatActive} chatProvider={chatProvider}/>
