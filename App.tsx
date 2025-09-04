@@ -8,6 +8,10 @@ const InfoIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="htt
 const ImageIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>);
 const ChatIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>);
 const SpeakerIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>);
+const EyeIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>);
+const EyeOffIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>);
+const AlertTriangleIcon: FC<{ className?: string }> = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>);
+
 
 // --- Helper Components ---
 
@@ -37,6 +41,30 @@ const ToggleSwitch: FC<{ checked: boolean; onChange: (checked: boolean) => void;
     </button>
 );
 
+const ApiKeyInput: FC<{id: string; value: string; onChange: (value: string) => void; placeholder?: string;}> = ({ id, value, onChange, placeholder }) => {
+    const [isVisible, setIsVisible] = useState(false);
+    return (
+        <div className="relative">
+            <input 
+                id={id}
+                type={isVisible ? 'text' : 'password'}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder || 'Enter your API key'}
+                className="w-full p-2 pr-10 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow"
+            />
+            <button 
+                type="button" 
+                onClick={() => setIsVisible(!isVisible)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-200"
+                aria-label={isVisible ? 'Hide API key' : 'Show API key'}
+            >
+                {isVisible ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+            </button>
+        </div>
+    );
+};
+
 
 const EndpointsConfig: FC<any> = ({ 
     port, setPort, 
@@ -46,15 +74,24 @@ const EndpointsConfig: FC<any> = ({
     chatProvider, setChatProvider,
     chatModel, setChatModel, 
     customChatUrl, setCustomChatUrl,
+    geminiApiKey, setGeminiApiKey,
+    customChatApiKey, setCustomChatApiKey,
     isTtsActive, setIsTtsActive,
     ttsProvider, setTtsProvider,
-    customTtsUrl, setCustomTtsUrl
+    customTtsUrl, setCustomTtsUrl,
+    customTtsApiKey, setCustomTtsApiKey
 }) => {
     return (
     <div className="w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 space-y-6">
         <div>
             <h2 className="text-xl font-semibold text-slate-200 mb-1">Proxy Server Configuration</h2>
             <p className="text-sm text-slate-400">Configure the main server port and the endpoints you want to activate.</p>
+        </div>
+         <div className="flex items-start p-3 rounded-lg bg-amber-900/30 border border-amber-500/50 text-amber-300">
+            <AlertTriangleIcon className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
+            <p className="text-sm">
+                <span className="font-semibold">Security Warning:</span> API keys are stored as plain text inside the generated server file. Run this server only in a trusted, private environment.
+            </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="space-y-2 md:col-span-3">
@@ -115,22 +152,31 @@ const EndpointsConfig: FC<any> = ({
                             </select>
                         </div>
                         
-                        {chatProvider === 'gemini' && (
+                        {chatProvider === 'gemini' && (<>
                             <div className="space-y-2">
                                 <label htmlFor="chat-model" className="font-medium text-slate-300 text-sm">Model</label>
                                 <select id="chat-model" value={chatModel} onChange={(e) => setChatModel(e.target.value)} className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow">
                                     <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                                 </select>
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <label htmlFor="gemini-api-key" className="font-medium text-slate-300 text-sm">Google Gemini API Key</label>
+                                <ApiKeyInput id="gemini-api-key" value={geminiApiKey} onChange={setGeminiApiKey} />
+                            </div>
+                        </>)}
 
-                        {chatProvider === 'custom' && (
+                        {chatProvider === 'custom' && (<>
                              <div className="space-y-2">
                                 <label htmlFor="custom-url" className="font-medium text-slate-300 text-sm">Endpoint Base URL</label>
                                 <input id="custom-url" type="text" value={customChatUrl} onChange={(e) => setCustomChatUrl(e.target.value)} placeholder="http://localhost:1234/v1" className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow" />
                                 <p className="text-xs text-slate-500">The proxy will forward requests to this URL. E.g., for LM Studio.</p>
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <label htmlFor="custom-chat-api-key" className="font-medium text-slate-300 text-sm">Custom URL Bearer Token (Optional)</label>
+                                <ApiKeyInput id="custom-chat-api-key" value={customChatApiKey} onChange={setCustomChatApiKey} placeholder="sk-..." />
+                                <p className="text-xs text-slate-500">If provided, this key will be sent as a Bearer token. Otherwise, the client's Authorization header will be forwarded.</p>
+                            </div>
+                        </>)}
                     </div>
                  )}
             </div>
@@ -164,13 +210,18 @@ const EndpointsConfig: FC<any> = ({
                         {ttsProvider === 'placeholder' && (
                             <p className="text-sm text-slate-400">This option will return a placeholder error, as a public TTS API is not yet integrated.</p>
                         )}
-                         {ttsProvider === 'custom' && (
+                         {ttsProvider === 'custom' && (<>
                             <div className="space-y-2">
                                 <label htmlFor="custom-tts-url" className="font-medium text-slate-300 text-sm">Endpoint URL</label>
                                 <input id="custom-tts-url" type="text" value={customTtsUrl} onChange={(e) => setCustomTtsUrl(e.target.value)} placeholder="http://localhost:5002/api/tts" className="w-full p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow" />
                                 <p className="text-xs text-slate-500">The proxy will forward TTS requests to this URL. The target should expect a POST request and return an audio stream.</p>
                             </div>
-                        )}
+                             <div className="space-y-2">
+                                <label htmlFor="custom-tts-api-key" className="font-medium text-slate-300 text-sm">Custom URL Bearer Token (Optional)</label>
+                                <ApiKeyInput id="custom-tts-api-key" value={customTtsApiKey} onChange={setCustomTtsApiKey} placeholder="Your-TTS-API-Key" />
+                                <p className="text-xs text-slate-500">If provided, this key will be sent as a Bearer token. Otherwise, the client's Authorization header will be forwarded.</p>
+                            </div>
+                        </>)}
                     </div>
                 )}
             </div>
@@ -207,35 +258,31 @@ const Instructions: FC<{ port: number, dependencies: string, isChatActive: boole
              <InfoIcon className="h-8 w-8 text-cyan-400 flex-shrink-0"/>
              <h2 className="text-2xl font-bold text-slate-200">How to Run Your Proxy Server</h2>
         </div>
-        <p className="text-slate-400">This script creates a local server that exposes multiple OpenAI-compatible endpoints. Image generation is routed to Pollinations.ai, while other endpoints are included as placeholders.</p>
+        <p className="text-slate-400">Follow these steps to generate, save, and run your custom Node.js proxy server.</p>
         <div className="space-y-3">
             <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step 1: Save the Code</h3>
-                <p className="text-slate-400">Copy the code above and save it in a file named <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">proxy-server.mjs</code>. The `.mjs` extension is important for it to be treated as a modern JavaScript module.</p>
+                <h3 className="font-semibold text-lg text-slate-300">Step 1: Configure and Copy Code</h3>
+                 <p className="text-slate-400">Use the form above to enable endpoints and enter any necessary API keys. Once configured, click the "Copy Code" button.</p>
             </div>
-             {isChatActive && chatProvider === 'gemini' && (
-                <div className="p-4 bg-slate-900/50 rounded-lg">
-                    <h3 className="font-semibold text-lg text-slate-300">Step 2: Set Environment Variable (For Gemini)</h3>
-                    <p className="text-slate-400">Create a <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">.env</code> file in the same directory and add your Google Gemini API key:</p>
-                    <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">API_KEY="YOUR_GEMINI_API_KEY"</code>
-                    <p className="text-slate-400 mt-2">You will also need to install <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">dotenv</code> by adding it to the install command below.</p>
-                </div>
-             )}
             <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '3' : '2'}: Install Dependencies</h3>
+                <h3 className="font-semibold text-lg text-slate-300">Step 2: Save the Code</h3>
+                <p className="text-slate-400">Paste the code into a new file and save it as <code className="text-amber-300 bg-slate-700 px-1 py-0.5 rounded">proxy-server.mjs</code>. The `.mjs` extension is important for it to be treated as a modern JavaScript module.</p>
+            </div>
+            <div className="p-4 bg-slate-900/50 rounded-lg">
+                <h3 className="font-semibold text-lg text-slate-300">Step 3: Install Dependencies</h3>
                 <p className="text-slate-400">Open a terminal or command prompt in the folder where you saved the file. You need Node.js installed. Run:</p>
                  <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">{dependencies}</code>
             </div>
              <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '4' : '3'}: Run the Server</h3>
+                <h3 className="font-semibold text-lg text-slate-300">Step 4: Run the Server</h3>
                 <p className="text-slate-400">In the same terminal, run:</p>
                  <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">node proxy-server.mjs</code>
             </div>
              <div className="p-4 bg-slate-900/50 rounded-lg">
-                <h3 className="font-semibold text-lg text-slate-300">Step {isChatActive && chatProvider === 'gemini' ? '5' : '4'}: Configure Your App</h3>
+                <h3 className="font-semibold text-lg text-slate-300">Step 5: Configure Your App</h3>
                 <p className="text-slate-400">In your application's API settings, set the API Base URL / Endpoint to:</p>
                 <code className="block text-cyan-300 bg-slate-900 mt-2 p-3 rounded-md border border-slate-700 break-all text-sm">http://localhost:${port}/v1</code>
-                 <p className="text-slate-400 mt-2">Set the API type to "OpenAI". If you are using the custom URL proxy, your application's API key will be forwarded automatically.</p>
+                 <p className="text-slate-400 mt-2">Set the API type to "OpenAI". For custom URL proxies, if you didn't provide a bearer token in the generator, your application's API key will be forwarded automatically.</p>
             </div>
         </div>
     </div>
@@ -251,9 +298,12 @@ const generateServerCode = (
     chatProvider: 'gemini' | 'custom',
     chatModel: string,
     customChatUrl: string,
+    geminiApiKey: string,
+    customChatApiKey: string,
     isTtsActive: boolean,
     ttsProvider: 'placeholder' | 'custom',
     customTtsUrl: string,
+    customTtsApiKey: string
 ): string => {
 
     const getImports = () => {
@@ -261,7 +311,6 @@ const generateServerCode = (
         const needsFetch = (isChatActive && chatProvider === 'custom') || (isTtsActive && ttsProvider === 'custom');
 
         if (isChatActive && chatProvider === 'gemini') {
-            imports += `import 'dotenv/config';\n`;
             imports += `import { GoogleGenAI } from '@google/genai';\n`;
         }
         if (needsFetch) {
@@ -282,14 +331,15 @@ app.post('/v1/chat/completions', (req, res) => {
         if (chatProvider === 'gemini') {
             return `
 // --- [ACTIVE] Chat Completions Endpoint (Powered by Google Gemini) ---
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const GEMINI_API_KEY = '${geminiApiKey}';
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const geminiModel = '${chatModel}';
 
 app.post('/v1/chat/completions', async (req, res) => {
     console.log('Received /v1/chat/completions request for model:', req.body.model);
     
-    if (!process.env.API_KEY) {
-        return res.status(500).json({ error: { message: 'API_KEY environment variable not set for Gemini.' } });
+    if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: { message: 'Google Gemini API key is not configured in the server.' } });
     }
     
     const { messages } = req.body;
@@ -340,18 +390,26 @@ app.post('/v1/chat/completions', async (req, res) => {
             return `
 // --- [ACTIVE] Chat Completions Endpoint (Proxy to Custom URL) ---
 const CUSTOM_CHAT_URL = '${customChatUrl.replace(/\/$/, '')}/chat/completions';
+const CUSTOM_CHAT_API_KEY = '${customChatApiKey}';
 
 app.post('/v1/chat/completions', async (req, res) => {
     console.log(\`Proxying /v1/chat/completions to \${CUSTOM_CHAT_URL}\`);
     
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+
+    // Use the key from this script if it exists, otherwise forward the client's Authorization header
+    if (CUSTOM_CHAT_API_KEY) {
+        headers['Authorization'] = \`Bearer \${CUSTOM_CHAT_API_KEY}\`;
+    } else if (req.headers.authorization) {
+        headers['Authorization'] = req.headers.authorization;
+    }
+
     try {
         const response = await fetch(CUSTOM_CHAT_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Forward the Authorization header if it exists
-                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
-            },
+            headers: headers,
             body: JSON.stringify(req.body)
         });
 
@@ -382,18 +440,26 @@ app.post('/v1/audio/speech', (req, res) => {
             return `
 // --- [ACTIVE] Text-to-Speech (TTS) Endpoint (Proxy to Custom URL) ---
 const CUSTOM_TTS_URL = '${customTtsUrl.replace(/\/$/, '')}';
+const CUSTOM_TTS_API_KEY = '${customTtsApiKey}';
 
 app.post('/v1/audio/speech', async (req, res) => {
     console.log(\`Proxying /v1/audio/speech to \${CUSTOM_TTS_URL}\`);
 
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+    
+    // Use the key from this script if it exists, otherwise forward the client's Authorization header
+    if (CUSTOM_TTS_API_KEY) {
+        headers['Authorization'] = \`Bearer \${CUSTOM_TTS_API_KEY}\`;
+    } else if (req.headers.authorization) {
+        headers['Authorization'] = req.headers.authorization;
+    }
+
     try {
         const response = await fetch(CUSTOM_TTS_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Forward the Authorization header if it exists
-                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
-            },
+            headers: headers,
             body: JSON.stringify(req.body)
         });
         
@@ -436,6 +502,7 @@ app.post('/v1/audio/speech', (req, res) => {
     };
 
     return `// Generated by Pollinations AI Proxy Generator
+// WARNING: This file contains API keys. Do not share it or commit it to version control.
 ${getImports()}
 const app = express();
 const PORT = ${port};
@@ -522,19 +589,21 @@ const App: FC = () => {
   const [chatProvider, setChatProvider] = useState<'gemini' | 'custom'>('gemini');
   const [chatModel, setChatModel] = useState<string>('gemini-2.5-flash');
   const [customChatUrl, setCustomChatUrl] = useState<string>('http://localhost:1234/v1');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
+  const [customChatApiKey, setCustomChatApiKey] = useState<string>('');
   const [isTtsActive, setIsTtsActive] = useState<boolean>(false);
   const [ttsProvider, setTtsProvider] = useState<'placeholder' | 'custom'>('placeholder');
   const [customTtsUrl, setCustomTtsUrl] = useState<string>('http://localhost:5002/api/tts');
+  const [customTtsApiKey, setCustomTtsApiKey] = useState<string>('');
 
 
-  const serverCode = useMemo(() => generateServerCode(port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive, ttsProvider, customTtsUrl), [port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, isTtsActive, ttsProvider, customTtsUrl]);
+  const serverCode = useMemo(() => generateServerCode(port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, geminiApiKey, customChatApiKey, isTtsActive, ttsProvider, customTtsUrl, customTtsApiKey), [port, width, height, isChatActive, chatProvider, chatModel, customChatUrl, geminiApiKey, customChatApiKey, isTtsActive, ttsProvider, customTtsUrl, customTtsApiKey]);
   
   const dependencies = useMemo(() => {
       const deps = new Set(['express', 'cors']);
       if(isChatActive) {
           if (chatProvider === 'gemini') {
             deps.add('@google/genai');
-            deps.add('dotenv');
           } else if (chatProvider === 'custom') {
             deps.add('node-fetch@2');
           }
@@ -557,9 +626,12 @@ const App: FC = () => {
                 chatProvider={chatProvider} setChatProvider={setChatProvider}
                 chatModel={chatModel} setChatModel={setChatModel}
                 customChatUrl={customChatUrl} setCustomChatUrl={setCustomChatUrl}
+                geminiApiKey={geminiApiKey} setGeminiApiKey={setGeminiApiKey}
+                customChatApiKey={customChatApiKey} setCustomChatApiKey={setCustomChatApiKey}
                 isTtsActive={isTtsActive} setIsTtsActive={setIsTtsActive}
                 ttsProvider={ttsProvider} setTtsProvider={setTtsProvider}
                 customTtsUrl={customTtsUrl} setCustomTtsUrl={setCustomTtsUrl}
+                customTtsApiKey={customTtsApiKey} setCustomTtsApiKey={setCustomTtsApiKey}
             />
             <CodePanel serverCode={serverCode} />
             <Instructions port={port} dependencies={dependencies} isChatActive={isChatActive} chatProvider={chatProvider}/>
